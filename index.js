@@ -1,4 +1,23 @@
-'use strict'
+
+require('dotenv').config({path:__dirname + '/.env'});
+var config = {
+  API_KEY: process.env.API_KEY || '',
+  API_SECRET: process.env.API_SECRET || '',
+  TO_NUMBER: process.env.TO_NUMBER || '',
+  MEDIA_ID: process.env.MEDIA_ID || '',
+  APP_ID: process.env.APP_ID || '',
+  PRIVATE_KEY: process.env.PRIVATE_KEY || '',
+  SERVER: process.env.SERVER || '',
+  DEBUG: process.env.DEBUG === 'true'
+};
+module.exports = config;
+
+const Nexmo = require('nexmo');
+const nexmo = new Nexmo({
+  apiKey: config.API_KEY,
+  apiSecret: config.API_SECRET
+});
+
 const app = require('express')();
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
@@ -16,11 +35,11 @@ app.get('/answer', function(req, res) {
     },
     {
       "action": "connect",
-      "eventUrl": ["http://47a71745.ngrok.io/event"],
+      "eventUrl": ["config.SERVER/event"],
       "from": req.body.from,
       "endpoint": [{
         "type": "phone",
-        "number": "447403969038"
+        "number": config.TO_NUMBER
       }]
     }
   ];
@@ -34,5 +53,15 @@ app.post('/event', function(req, res) {
 
 app.post('/sms', (req, res) => {
   console.log(req.body);
+  nexmo.message.sendSms(
+    req.body.msisdn, config.TO_NUMBER, req.body.text,
+      (err, responseData) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.dir(responseData);
+        }
+      }
+   );
   res.status(200).end();
 });
