@@ -1,5 +1,6 @@
-
-require('dotenv').config({path:__dirname + '/.env'});
+require('dotenv').config({
+  path: __dirname + '/.env'
+});
 var config = {
   API_KEY: process.env.API_KEY || '',
   API_SECRET: process.env.API_SECRET || '',
@@ -17,7 +18,7 @@ const nexmo = new Nexmo({
   apiKey: config.API_KEY,
   apiSecret: config.API_SECRET
 });
-
+var STATUS = "available";
 const app = require('express')();
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
@@ -53,8 +54,14 @@ app.post('/event', function(req, res) {
 
 app.post('/sms', (req, res) => {
   console.log(req.body);
-  nexmo.message.sendSms(
-    req.body.msisdn, config.TO_NUMBER, req.body.text,
+
+  if (req.body.msisdn == config.TO_NUMBER) {
+    STATUS = req.body.text;
+    console.log(req.body.text);
+    res.status(200).end();
+  } else {
+    nexmo.message.sendSms(
+      req.body.msisdn, config.TO_NUMBER, req.body.text,
       (err, responseData) => {
         if (err) {
           console.log(err);
@@ -62,6 +69,7 @@ app.post('/sms', (req, res) => {
           console.dir(responseData);
         }
       }
-   );
-  res.status(200).end();
+    );
+    res.status(200).end();
+  }
 });
