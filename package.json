@@ -1,0 +1,32 @@
+{
+  "name": "nexmo-voicemail",
+  "version": "0.0.1",
+  "description": "Smart Voicemail with Nexmo, Google Speech API & Nodemailer",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juliacodez/nexmo-voicemail.git"
+  },
+  "keywords": [
+    "nexmo",
+    "google",
+    "nodemailer",
+    "voicemail"
+  ],
+  "author": "Julia Biro",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/juliacodez/nexmo-voicemail/issues"
+  },
+  "homepage": "https://github.com/juliacodez/nexmo-voicemail#readme",
+  "dependencies": {
+    "@google-cloud/speech": "^1.1.0",
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2",
+    "nexmo": "^2.2.0",
+    "nodemailer": "^4.6.0"
+  }
+}
