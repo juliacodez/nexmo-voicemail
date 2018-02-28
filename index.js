@@ -16,7 +16,9 @@ module.exports = config;
 const Nexmo = require("nexmo");
 const nexmo = new Nexmo({
   apiKey: config.API_KEY,
-  apiSecret: config.API_SECRET
+  apiSecret: config.API_SECRET,
+  applicationId: config.APP_ID,
+  privateKey: config.PRIVATE_KEY
 });
 var STATUS = "available";
 const app = require("express")();
@@ -38,7 +40,7 @@ app.get("/answer", function(req, res) {
       {
         "action": "connect",
         "eventUrl": [config.SERVER + "/event"],
-        "from": req.body.from,
+        "from": req.query.from,
         "endpoint": [{
           "type": "phone",
           "number": config.TO_NUMBER
@@ -50,11 +52,11 @@ app.get("/answer", function(req, res) {
     const ncco = [{
         "action": "talk",
         "voiceName": "Jennifer",
-        "text": "Hi, " + STATUS + "Please leave your name and quick message after the tone, then press #."
+        "text": "Hi, " + STATUS + " Please leave your name and quick message after the tone, then press #."
       },
       {
         "action": "record",
-        "eventUrl": [config.SERVER + "/record"],
+        "eventUrl": [config.SERVER + "/record?from=" + req.query.from],
         "endOnSilence": "3",
         "endOnKey": "#",
         "beepStart": "true"
@@ -70,7 +72,13 @@ app.get("/answer", function(req, res) {
 });
 
 app.post("/record", (req, res) => {
-console.log(req.body);
+let audioURL = req.body.recording_url;
+let audioFile = "recordings/" + req.query.from + "_" + audioURL.split("/").pop() + ".mp3";
+console.log(audioFile);
+nexmo.files.save(audioURL, audioFile, (err, response) => {
+  if(err) console.log(err);
+if(response) {console.log("The audio is downloaded successfully!");}
+});
 res.status(204).end();
 });
 
