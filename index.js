@@ -31,3 +31,8 @@ app.post('/event', function(req, res) {
   console.log(req.body);
   res.status(204).end();
 });
+
+app.post('/sms', (req, res) => {
+  console.log(req.body);
+  res.status(200).end();
+});
