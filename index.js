@@ -96,7 +96,7 @@ app.post("/sms", (req, res) => {
     res.status(200).end();
   } else {
     nexmo.message.sendSms(
-      req.body.msisdn, config.TO_NUMBER, req.body.text,
+      req.body.msisdn, config.TO_NUMBER, req.body.text, {type: "unicode"},
       (err, responseData) => {
         if (err) {
           console.log(err);
