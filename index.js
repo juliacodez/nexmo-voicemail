@@ -13,6 +13,19 @@ var config = {
 };
 module.exports = config;
 
+const speech = require('@google-cloud/speech');
+const client = new speech.SpeechClient();
+
+const encoding = 'LINEAR16';
+const sampleRateHertz = 16000;
+const languageCode = 'en-GB';
+
+const recordConfig = {
+  encoding: encoding,
+  sampleRateHertz: sampleRateHertz,
+  languageCode: languageCode,
+};
+
 const Nexmo = require("nexmo");
 const nexmo = new Nexmo({
   apiKey: config.API_KEY,
@@ -20,7 +33,9 @@ const nexmo = new Nexmo({
   applicationId: config.APP_ID,
   privateKey: config.PRIVATE_KEY
 });
+
 var STATUS = "available";
+
 const app = require("express")();
 const bodyParser = require("body-parser");
 app.use(bodyParser.json());
@@ -52,14 +67,15 @@ app.get("/answer", function(req, res) {
     const ncco = [{
         "action": "talk",
         "voiceName": "Jennifer",
-        "text": "Hi, " + STATUS + " Please leave your name and quick message after the tone, then press #."
+        "text": "Hi, " + STATUS + "  Please leave your name and quick message after the tone, then press #."
       },
       {
         "action": "record",
         "eventUrl": [config.SERVER + "/record?from=" + req.query.from],
         "endOnSilence": "3",
         "endOnKey": "#",
-        "beepStart": "true"
+        "beepStart": "true",
+        "format": "wav"
       },
       {
         "action": "talk",
@@ -72,14 +88,32 @@ app.get("/answer", function(req, res) {
 });
 
 app.post("/record", (req, res) => {
-let audioURL = req.body.recording_url;
-let audioFile = "recordings/" + req.query.from + "_" + audioURL.split("/").pop() + ".mp3";
-console.log(audioFile);
-nexmo.files.save(audioURL, audioFile, (err, response) => {
-  if(err) console.log(err);
-if(response) {console.log("The audio is downloaded successfully!");}
-});
-res.status(204).end();
+  nexmo.files.get(req.body.recording_url, (err, responseData) => {
+    if (responseData) {
+
+      var request = {
+        config: recordConfig,
+        audio: {
+          content: responseData.toString("base64")
+        }
+      };
+
+      // Detects speech in the audio file
+      client
+        .recognize(request)
+        .then(data => {
+          const response = data[0];
+          const transcription = response.results
+            .map(result => result.alternatives[0].transcript)
+            .join('\n');
+          console.log(`Transcription: `, transcription);
+        })
+        .catch(err => {
+          console.log('ERROR:', err);
+        });
+    }
+  });
+  res.send("ok");
 });
 
 app.post("/event", function(req, res) {
