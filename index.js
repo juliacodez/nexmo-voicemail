@@ -1,11 +1,18 @@
 require("dotenv").config({
   path: __dirname + "/.env"
 });
+
+const speech = require('@google-cloud/speech');
+const client = new speech.SpeechClient();
+const nodemailer = require('nodemailer');
+const Nexmo = require("nexmo");
+const app = require("express")();
+const bodyParser = require("body-parser");
+
 var config = {
   API_KEY: process.env.API_KEY || "",
   API_SECRET: process.env.API_SECRET || "",
   TO_NUMBER: process.env.TO_NUMBER || "",
-  MEDIA_ID: process.env.MEDIA_ID || "",
   APP_ID: process.env.APP_ID || "",
   PRIVATE_KEY: process.env.PRIVATE_KEY || "",
   SERVER: process.env.SERVER || "",
@@ -14,10 +21,6 @@ var config = {
   MAIL_USER: process.env.MAIL_USER || "",
   MAIL_PASS: process.env.MAIL_PASS || ""
 };
-module.exports = config;
-
-const speech = require('@google-cloud/speech');
-const client = new speech.SpeechClient();
 
 const encoding = 'LINEAR16';
 const sampleRateHertz = 16000;
@@ -29,7 +32,6 @@ const recordConfig = {
   languageCode: languageCode,
 };
 
-var nodemailer = require('nodemailer');
 var transporter = nodemailer.createTransport({
   service: config.MAIL_SERVICE,
   auth: {
@@ -38,7 +40,6 @@ var transporter = nodemailer.createTransport({
   }
 });
 
-const Nexmo = require("nexmo");
 const nexmo = new Nexmo({
   apiKey: config.API_KEY,
   apiSecret: config.API_SECRET,
@@ -48,8 +49,6 @@ const nexmo = new Nexmo({
 
 var STATUS = "available";
 
-const app = require("express")();
-const bodyParser = require("body-parser");
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: true
@@ -119,23 +118,24 @@ app.post("/record", (req, res) => {
             .map(result => result.alternatives[0].transcript)
             .join('\n');
           console.log(`Transcription: `, transcription);
+          
           nexmo.message.sendSms(req.query.from, config.TO_NUMBER, transcription);
 
-            var mailOptions = {
-              from: config.MAIL_USER,
-              to: config.MAIL_USER,
-              subject: req.query.from,
-              text: transcription
-            };
+          var mailOptions = {
+            from: config.MAIL_USER,
+            to: config.MAIL_USER,
+            subject: req.query.from,
+            text: transcription
+          };
 
-            transporter.sendMail(mailOptions, function(error, info){
-              console.log('shot');
-              if (error) {
-                console.log("error:", error);
-              } else {
-                console.log('Email sent: ' + info.response);
-              }
-            });
+          transporter.sendMail(mailOptions, function(error, info) {
+            console.log('shot');
+            if (error) {
+              console.log("error:", error);
+            } else {
+              console.log('Email sent: ' + info.response);
+            }
+          });
           console.log("messages sent");
         })
         .catch(err => {
@@ -161,7 +161,9 @@ app.post("/sms", (req, res) => {
     res.status(200).end();
   } else {
     nexmo.message.sendSms(
-      req.body.msisdn, config.TO_NUMBER, req.body.text, {type: "unicode"},
+      req.body.msisdn, config.TO_NUMBER, req.body.text, {
+        type: "unicode"
+      },
       (err, responseData) => {
         if (err) {
           console.log(err);
@@ -173,3 +175,5 @@ app.post("/sms", (req, res) => {
     res.status(200).end();
   }
 });
+
+module.exports = config;
