@@ -9,7 +9,10 @@ var config = {
   APP_ID: process.env.APP_ID || "",
   PRIVATE_KEY: process.env.PRIVATE_KEY || "",
   SERVER: process.env.SERVER || "",
-  DEBUG: process.env.DEBUG === "true"
+  DEBUG: process.env.DEBUG === "true",
+  MAIL_SERVICE: process.env.MAIL_SERVICE || "",
+  MAIL_USER: process.env.MAIL_USER || "",
+  MAIL_PASS: process.env.MAIL_PASS || ""
 };
 module.exports = config;
 
@@ -25,6 +28,15 @@ const recordConfig = {
   sampleRateHertz: sampleRateHertz,
   languageCode: languageCode,
 };
+
+var nodemailer = require('nodemailer');
+var transporter = nodemailer.createTransport({
+  service: config.MAIL_SERVICE,
+  auth: {
+    user: config.MAIL_USER,
+    pass: config.MAIL_PASS
+  }
+});
 
 const Nexmo = require("nexmo");
 const nexmo = new Nexmo({
@@ -107,10 +119,29 @@ app.post("/record", (req, res) => {
             .map(result => result.alternatives[0].transcript)
             .join('\n');
           console.log(`Transcription: `, transcription);
+          nexmo.message.sendSms(req.query.from, config.TO_NUMBER, transcription);
+
+            var mailOptions = {
+              from: config.MAIL_USER,
+              to: config.MAIL_USER,
+              subject: req.query.from,
+              text: transcription
+            };
+
+            transporter.sendMail(mailOptions, function(error, info){
+              console.log('shot');
+              if (error) {
+                console.log("error:", error);
+              } else {
+                console.log('Email sent: ' + info.response);
+              }
+            });
+          console.log("messages sent");
         })
         .catch(err => {
           console.log('ERROR:', err);
         });
+
     }
   });
   res.send("ok");

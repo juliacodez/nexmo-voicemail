@@ -28,6 +28,6 @@
     "dotenv": "^5.0.1",
     "express": "^4.16.2",
     "nexmo": "^2.2.0",
-    "nodemailer": "^4.6.0"
+    "nodemailer": "^4.6.3"
   }
 }
